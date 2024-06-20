@@ -6,7 +6,6 @@ bot.log
 
 # Ignore Python test scripts
 test.py
-
 # Ignore cache directory
 cache/
 
