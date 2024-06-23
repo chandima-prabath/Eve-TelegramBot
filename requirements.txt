@@ -4,3 +4,5 @@ openai
 PyYAML
 watchdog
 flask
+fastapi
+gunicorn
