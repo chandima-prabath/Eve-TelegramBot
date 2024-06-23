@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Files Gallery</title>
+    <style>
+        body {
+            background-color: #1a1a1a; /* Dark background */
+            color: #ffffff; /* White text */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #1c1c36; /* Darker navbar background */
+            padding: 10px;
+            display: flex;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 2em; /* Larger font size */
+            color: #bd93f9; /* Bright purple */
+        }
+        .image-container {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 75px; /* Adjusted margin for fixed navbar and sort button */
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+        .image-item {
+            background-color: #1f1f2a; /* Darker background */
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: calc(33.33% - 20px); /* Three items per row with gap */
+            margin-bottom: 20px;
+            transition: transform 0.3s ease; /* Smooth transform animation */
+            display: flex; /* Make container flex to align image and metadata */
+            flex-direction: column; /* Stack image and metadata vertically */
+            align-items: center; /* Center items horizontally */
+            position: relative; /* Position for absolute time display */
+        }
+        .image-item:hover {
+            transform: scale(1.05); /* Scale up on hover */
+        }
+        .image-item img {
+            max-width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease; /* Smooth transform animation */
+        }
+        .image-item:hover img {
+            transform: scale(1.1); /* Scale up image on hover */
+        }
+        .image-item .created-at {
+            background-color: #20203f; /* Dark background for yaml data */
+            color: #ffffff;
+            text-align: center;
+            padding: 8px 16px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            width: 100%; /* Full width */
+            font-size: 0.8em; /* Smaller font size */
+            position: absolute; /* Position at the top */
+            top: 0; /* Align to the top */
+        }
+        .pre {
+            max-width: 370px;
+            overflow: scroll;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #bd93f9; /* Bright purple */
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-top: 20px;
+        }
+        .load-more {
+            top: -20px;
+            padding: 5px;
+            margin-bottom: 20px;
+            background-color: #a2a2a2; /* Bright purple */
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            border-radius: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth background and transform animations */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Box shadow for depth */
+            align-items: center;
+            display: flex;
+        }
+        .load-more:hover {
+            background-color: #6272a4; /* Darker hover color */
+            transform: translateY(-2px); /* Lift button slightly on hover */
+        }
+
+        .sort-btn {
+            margin-top: 85px;
+            background-color: #a2a2a2;
+            color: #ffffff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: fixed;
+            right: 4%;
+            z-index: 1;
+        }
+
+        .sort-btn:hover {
+            background-color: #6272a4; /* Darker hover color */
+            transform: translateY(-2px); /* Lift button slightly on hover */
+        }
+        
+        .go-to-top-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 4%;
+            background-color: #a2a2a2; /* Bright purple */
+            color: #ffffff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth background and transform animations */
+        }
+
+
+        .go-to-top-btn:hover {
+            background-color: #6272a4; /* Darker hover color */
+            transform: translateY(-2px); /* Lift button slightly on hover */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 1200px) {
+            .image-item {
+                width: calc(50% - 20px); /* Two items per row on smaller screens */
+            }
+        }
+        @media (max-width: 900px) {
+            .image-item {
+                width: calc(33.33% - 20px); /* Three items per row on smaller screens */
+            }
+        }
+        @media (max-width: 600px) {
+            .image-item {
+                width: calc(50% - 20px); /* Two items per row on smaller screens */
+            }
+            .navbar h1 {
+                font-size: 1.5em; /* Adjusted font size for smaller screens */
+            }
+            .image-item .created-at {
+                font-size: 0.7em; /* Adjusted font size for smaller screens */
+            }
+        }
+        @media (max-width: 400px) {
+            .image-item {
+                width: calc(100% - 20px); /* One item per row on very small screens */
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div class="navbar">
+        <img style="width:60px; border-radius: 20px; margin-right: 10px;" src="/statics/logo.png" alt="logo">
+        <h1 style="color: white;">SpaceBullet </h1>
+        <h1 style="margin-left: 10px;">Gallery</h1>
+    </div>
+    <button class="sort-btn" id="sort-btn" title="Sort"><img style="color: black;" width="30px" src="/statics/sort.svg" alt="sort"></button>
+    <div class="image-container" id="image-container"></div>
+    <div class="spinner" id="spinner"></div>
+    <button class="load-more" id="load-more-btn" title="Load More"><img width="30px" src="/statics/down-arrow.svg" alt="load-more"></button>
+    <button class="go-to-top-btn" id="go-to-top-btn" title="Go to Top"><img width="30px" src="/statics/up-arrow.svg" alt="Go to the Top"></button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let allImages = [];
+            let page = 0;
+            const pageSize = 20;
+            let loading = false;
+
+            async function fetchImages() {
+                const response = await fetch('/images');
+                return response.json();
+            }
+
+            function createImageItem(image, yaml) {
+                const container = document.createElement('div');
+                container.className = 'image-item';
+
+                const img = document.createElement('img');
+                img.src = `/cache/${image}`;
+                img.alt = image;
+                img.onerror = () => {
+                    container.style.display = 'none';
+                };
+
+                const pre = document.createElement('pre');
+                pre.className = 'pre';
+                pre.textContent = JSON.stringify(yaml, null, 2);
+
+                const createdAt = document.createElement('div');
+                createdAt.className = 'created-at';
+                const createdAtDate = getImageCreatedDate(image); // Get formatted date from image name
+                createdAt.textContent = `Generated: ${createdAtDate}`;
+
+                container.appendChild(img);
+                container.appendChild(createdAt);
+                container.appendChild(pre);
+
+                return container;
+            }
+
+            function getImageCreatedDate(imageName) {
+                // Assuming imageName format: image_YYYYMMDDHHMMSS.jpg
+                const year = imageName.substr(6, 4);
+                const month = imageName.substr(10, 2);
+                const day = imageName.substr(12, 2);
+                const hour24 = imageName.substr(14, 2);
+                const minute = imageName.substr(16, 2);
+                const second = imageName.substr(18, 2);
+
+                // Convert 24-hour format to 12-hour format
+                let hour12 = hour24 % 12;
+                hour12 = hour12 ? hour12 : 12; // If hour is 0, set it to 12
+
+                const period = hour24 >= 12 ? 'PM' : 'AM';
+
+                return `${day}/${month}/${year} ${hour12}:${minute}:${second} ${period}`;
+            }
+
+            async function loadImages() {
+                if (loading) return;
+                loading = true;
+                const spinner = document.getElementById('spinner');
+                spinner.style.display = 'block';
+
+                const data = await fetchImages();
+                allImages = data.image_files.reverse(); // Reverse the order of images
+                displayImages(allImages.slice(0, pageSize));
+
+                spinner.style.display = 'none';
+                observeLastImage();
+                loading = false;
+            }
+
+            function displayImages(images) {
+                const imageContainer = document.getElementById('image-container');
+                images.forEach(item => {
+                    const imageItem = createImageItem(item.image, item.yaml);
+                    imageContainer.appendChild(imageItem);
+                });
+            }
+
+            function observeLastImage() {
+                const imageContainer = document.getElementById('image-container');
+                const observer = new IntersectionObserver((entries) => {
+                    if (entries[0].isIntersecting && !loading) {
+                        loadMoreImages();
+                    }
+                });
+                observer.observe(imageContainer.lastElementChild);
+            }
+
+            async function loadMoreImages() {
+                if (loading) return;
+                loading = true;
+                const start = page * pageSize;
+                const end = start + pageSize;
+                const images = allImages.slice(start, end);
+                
+                if (images.length === 0) {
+                    // No more images to load, remove the load more button
+                    const loadMoreBtn = document.getElementById('load-more-btn');
+                    loadMoreBtn.style.display = 'none';
+                } else {
+                    displayImages(images);
+                    page++;
+                }
+                
+                loading = false;
+            }
+
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            loadMoreBtn.addEventListener('click', loadMoreImages);
+
+            const sortBtn = document.getElementById('sort-btn');
+            sortBtn.addEventListener('click', () => {
+                allImages.reverse(); // Reverse the order of images array
+                displayImages(allImages.slice(0, pageSize));
+            });
+
+            const goToTopBtn = document.getElementById('go-to-top-btn');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    goToTopBtn.style.display = 'block';
+                } else {
+                    goToTopBtn.style.display = 'none';
+                }
+            });
+
+            goToTopBtn.addEventListener('click', () => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            loadImages();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+pyTelegramBotAPI
+python-dotenv
+openai
+PyYAML
+watchdog
+flask

@@ -6,8 +6,10 @@ bot.log
 
 # Ignore Python test scripts
 test.py
+output_image.jpg
 # Ignore cache directory
 cache/
+archive/
 
 # Igonre pycache
 __pycache__

@@ -1,16 +1,21 @@
-import os
 import logging
+import os
 import threading
 import telebot
 from dotenv import load_dotenv
 from llm import generate_llm
 from sd import generate_sd
+import time
 
 # Load environment variables
-load_dotenv()
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-if not TELEGRAM_BOT_TOKEN:
-    raise ValueError("TELEGRAM_BOT_TOKEN environment variable is not set")
+def load_env():
+    load_dotenv()
+    global TELEGRAM_BOT_TOKEN
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not TELEGRAM_BOT_TOKEN:
+        raise ValueError("TELEGRAM_BOT_TOKEN environment variable is not set")
+
+load_env()
 
 # Initialize the bot
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
@@ -32,7 +37,7 @@ def response_text(chat_id, prompt):
     Generate a response using the LLM and send it to the user.
     """
     try:
-        msg = generate_llm(prompt)
+        msg = generate_llm(prompt)  # Example function call to generate a response
         bot.send_message(chat_id, msg)
         logger.info(f"Chat ID: {chat_id} - Sent Message: {msg}")
     except Exception as e:
@@ -55,7 +60,8 @@ def handle_imagine_command(message):
 
     def handle_image_generation():
         try:
-            image_data,image_path = generate_sd(prompt)
+            # Example function call to generate image data
+            image_data, image_path = generate_sd(prompt)
             bot.delete_message(chat_id=message.chat.id, message_id=generating_message.message_id)
 
             if image_data:
@@ -81,10 +87,18 @@ def handle_message(message):
 
     threading.Thread(target=response_text, args=(chat_id, user_message)).start()
 
+def start_telegram_bot():
+    """
+    Start the Telegram bot.
+    """
+    while True:
+        try:
+            logger.info("Starting bot")
+            bot.polling(none_stop=True)
+        except Exception as e:
+            logger.critical(f"Critical error: {e}")
+            time.sleep(5)  # Wait for a few seconds before restarting
+
+# Ensure the bot starts when this script is executed directly
 if __name__ == '__main__':
-    try:
-        logger.info("Starting bot")
-        bot.polling(none_stop=True)
-    except Exception as e:
-        logger.critical(f"Critical error: {e}")
-        raise
+    start_telegram_bot()
