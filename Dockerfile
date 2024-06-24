@@ -24,7 +24,7 @@ COPY statics /app/statics
 EXPOSE 80
 
 # Define environment variable
-ENV FLASK_APP=server.py
+ENV FLASK_APP=app.py
 
 # Run Gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:80", "server:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:80", "app:app"]

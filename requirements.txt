@@ -6,3 +6,4 @@ watchdog
 flask
 fastapi
 gunicorn
+pillow

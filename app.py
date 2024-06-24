@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from telegram import start_telegram_bot
 from pydantic import BaseModel
 from typing import List, Dict, Union
 import os
 import threading
 import yaml
+from image_payload_reader import read_payload_from_image
+from telegram import start_telegram_bot
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -57,16 +58,29 @@ def get_images():
     image_data = fetch_image_files()
     return ImageResponse(image_files=image_data)
 
-@app.get('/cache/{image_name}', response_class=FileResponse)
+@app.get('/cache/{image_name}', response_class=JSONResponse)
 def get_image(image_name: str):
     file_path = os.path.join('cache', image_name)
     if os.path.exists(file_path):
         return FileResponse(file_path)
-    return JSONResponse(status_code=404, content={"error": "File not found"})
+    raise HTTPException(status_code=404, detail="File not found")
 
-@app.get('/statics/{image_name}', response_class=FileResponse)
+@app.get('/statics/{image_name}', response_class=JSONResponse)
 def get_static_image(image_name: str):
     file_path = os.path.join('statics', image_name)
     if os.path.exists(file_path):
         return FileResponse(file_path)
-    return JSONResponse(status_code=404, content={"error": "File not found"})
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get('/yaml/{image_name}', response_class=JSONResponse)
+def get_embedded_yaml(image_name: str):
+    file_path = os.path.join('cache', image_name)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Image file not found")
+    
+    # Use the function to read YAML payload from image metadata
+    yaml_payload = read_payload_from_image(file_path)
+    if yaml_payload:
+        return yaml_payload
+    else:
+        raise HTTPException(status_code=404, detail="No YAML payload found in the image metadata")

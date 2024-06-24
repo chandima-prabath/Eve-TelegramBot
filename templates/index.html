@@ -225,7 +225,33 @@
 
                 const pre = document.createElement('pre');
                 pre.className = 'pre';
-                pre.textContent = JSON.stringify(yaml, null, 2);
+                const pre_json = JSON.stringify(yaml, null, 2);
+                if (pre_json === '{}') {
+                    console.log(`YAML data is null for image: ${image}`);
+                    pre.textContent = "No YAML data available";
+
+                    // Fetch YAML data from /yaml route
+                    fetch(`/yaml/${image}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data) {
+                                // Update the pre element with fetched YAML data
+                                pre.textContent = JSON.stringify(data, null, 2);
+                            } else {
+                                console.log(`No YAML data found for image: ${image}`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching YAML data:', error);
+                        });
+                } else {
+                    pre.textContent = pre_json;
+                }
 
                 const createdAt = document.createElement('div');
                 createdAt.className = 'created-at';
@@ -238,6 +264,8 @@
 
                 return container;
             }
+
+
 
             function getImageCreatedDate(imageName) {
                 // Assuming imageName format: image_YYYYMMDDHHMMSS.jpg
