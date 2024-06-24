@@ -254,6 +254,7 @@
             let page = 0;
             const pageSize = 20;
             let loading = false;
+            let loadedImageNames = new Set(); // Set to track loaded image names
 
             async function fetchImages() {
                 const response = await fetch('/images');
@@ -348,11 +349,12 @@
 
             function displayImages(images) {
                 const imageContainer = document.getElementById('image-container');
-                // Clear the container first
-                imageContainer.innerHTML = '';
                 images.forEach(item => {
-                    const imageItem = createImageItem(item.image, item.yaml);
-                    imageContainer.appendChild(imageItem);
+                    if (!loadedImageNames.has(item.image)) { // Check if image is already loaded
+                        const imageItem = createImageItem(item.image, item.yaml);
+                        imageContainer.appendChild(imageItem);
+                        loadedImageNames.add(item.image); // Add image name to loaded set
+                    }
                 });
             }
 
@@ -412,6 +414,7 @@
 
             loadImages();
         });
+
     </script>
 </body>
 </html>
