@@ -11,6 +11,7 @@ config:
     height: 1024
     sampler_name: DPM++ 2M
     cfg_scale: 7.0
+    imgbb_upload: false
   app:
     whatsapp_bot_enabled: true
     telegram_bot_enabled: true

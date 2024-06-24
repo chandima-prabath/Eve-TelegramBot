@@ -27,32 +27,35 @@ def upload_to_imgbb(image_path, file_name):
     Returns:
         str: URL of the uploaded image on ImgBB.
     """
-    try:
-        with open(image_path, 'rb') as f:
-            image_data = f.read()
-        
-        response = requests.post(
-            "https://api.imgbb.com/1/upload",
-            params={
-                "key": IMGBB_API_KEY,
-            },
-            files={
-                "image": (file_name, image_data)
-            }
-        )
-        response.raise_for_status()
-        result = response.json()
-        if result["data"] and "url" in result["data"]:
-            return result["data"]["url"]
-        else:
-            print("Failed to upload image to ImgBB.")
+    config = load_config()
+    config = config['config']
+    if config['SD']['imgbb_upload'] == True:
+        try:
+            with open(image_path, 'rb') as f:
+                image_data = f.read()
+            
+            response = requests.post(
+                "https://api.imgbb.com/1/upload",
+                params={
+                    "key": IMGBB_API_KEY,
+                },
+                files={
+                    "image": (file_name, image_data)
+                }
+            )
+            response.raise_for_status()
+            result = response.json()
+            if result["data"] and "url" in result["data"]:
+                return result["data"]["url"]
+            else:
+                print("Failed to upload image to ImgBB.")
+                return None
+        except requests.RequestException as e:
+            print(f"Error uploading image to ImgBB: {e}")
             return None
-    except requests.RequestException as e:
-        print(f"Error uploading image to ImgBB: {e}")
-        return None
-    except Exception as e:
-        print(f"Unexpected error uploading image to ImgBB: {e}")
-        return None
+        except Exception as e:
+            print(f"Unexpected error uploading image to ImgBB: {e}")
+            return None
 
 def generate_sd(prompt):
     """
