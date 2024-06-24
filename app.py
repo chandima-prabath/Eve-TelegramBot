@@ -8,6 +8,20 @@ import threading
 import yaml
 from image_payload_reader import read_payload_from_image
 from telegram import start_telegram_bot
+from utils import read_config
+
+def refresh_info():
+    config = read_config()
+    app_version = config['app']['version']
+    whatsapp_bot_enabled=config['app']['whatsapp_bot_enabled']
+    telegram_bot_enabled=config['app']['telegram_bot_enabled']
+    info = {
+        'version': app_version,
+        'whatsapp_bot_enabled':whatsapp_bot_enabled,
+        'telegram_bot_enabled':telegram_bot_enabled,
+    }
+    return info
+
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -20,12 +34,19 @@ class ImageFile(BaseModel):
 class ImageResponse(BaseModel):
     image_files: List[ImageFile]
 
-# Function to start the Telegram bot in a separate thread
-def start_telegram():
-    start_telegram_bot()
+def start_bots():
+    info = refresh_info()
+    whatsapp_bot_enabled = info['whatsapp_bot_enabled']
+    telegram_bot_enabled = info['telegram_bot_enabled']
+    
+    if telegram_bot_enabled:
+        start_telegram_bot()
+
+    if whatsapp_bot_enabled:
+        pass
 
 # Start the Telegram bot in a separate thread when the application starts
-threading.Thread(target=start_telegram).start()
+threading.Thread(target=start_bots).start()
 
 # Function to fetch image files and corresponding YAML data from 'cache' directory
 def fetch_image_files():
@@ -51,6 +72,12 @@ async def index(request: Request):
     # Render the HTML template with fresh image data
     image_data = fetch_image_files()
     return templates.TemplateResponse("index.html", {"request": request, "image_data": image_data})
+
+@app.get('/info', response_class=JSONResponse)
+def get_info():
+    info=refresh_info()
+    return info
+
 
 @app.get('/images', response_model=ImageResponse)
 def get_images():

@@ -34,6 +34,28 @@
             font-size: 2em; /* Larger font size */
             color: #bd93f9; /* Bright purple */
         }
+
+        @keyframes colorChange {
+        0% {
+            color: rgb(67, 252, 0);
+        }
+        50% {
+            color: rgb(93, 195, 55);
+        }
+        100% {
+            color: rgb(67, 252, 0);
+        }
+        }
+
+        #version{
+            width: 130px;
+            position: relative;
+            top: -15px;
+            right: 21px;
+            font-weight: bolder;
+            animation: colorChange .5s infinite;
+        }
+
         .image-container {
             width: 100%;
             max-width: 1200px;
@@ -193,14 +215,40 @@
         <img style="width:60px; border-radius: 20px; margin-right: 10px;" src="/statics/logo.png" alt="logo">
         <h1 style="color: white;">SpaceBullet </h1>
         <h1 style="margin-left: 10px;">Gallery</h1>
+        <version id="version">0.5 Beta</version>
     </div>
     <button class="sort-btn" id="sort-btn" title="Sort"><img style="color: black;" width="30px" src="/statics/sort.svg" alt="sort"></button>
     <div class="image-container" id="image-container"></div>
     <div class="spinner" id="spinner"></div>
     <button class="load-more" id="load-more-btn" title="Load More"><img width="30px" src="/statics/down-arrow.svg" alt="load-more"></button>
     <button class="go-to-top-btn" id="go-to-top-btn" title="Go to Top"><img width="30px" src="/statics/up-arrow.svg" alt="Go to the Top"></button>
-
     <script>
+        function getInfo() {
+            fetch('/info')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Assuming you want to log the retrieved information
+                    console.log('Info retrieved:', data);
+                    const versionElement = document.getElementById('version');
+                    if (versionElement) {
+                        // Extract the 'version' property from the data object
+                        const version = data['version'];
+                        versionElement.textContent = `${version}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching info:', error);
+                });
+        }
+
+        // Execute getInfo function when the window loads
+        window.onload = getInfo;
+
         document.addEventListener('DOMContentLoaded', () => {
             let allImages = [];
             let page = 0;
@@ -265,8 +313,6 @@
                 return container;
             }
 
-
-
             function getImageCreatedDate(imageName) {
                 // Assuming imageName format: image_YYYYMMDDHHMMSS.jpg
                 const year = imageName.substr(6, 4);
@@ -302,6 +348,8 @@
 
             function displayImages(images) {
                 const imageContainer = document.getElementById('image-container');
+                // Clear the container first
+                imageContainer.innerHTML = '';
                 images.forEach(item => {
                     const imageItem = createImageItem(item.image, item.yaml);
                     imageContainer.appendChild(imageItem);
