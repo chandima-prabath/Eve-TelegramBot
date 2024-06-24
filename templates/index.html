@@ -248,173 +248,180 @@
 
         // Execute getInfo function when the window loads
         window.onload = getInfo;
+    </script>
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    let allImages = [];
+    let page = 0;
+    const pageSize = 20;
+    let loading = false;
+    let loadedImageNames = new Set(); // Set to track loaded image names
+    let sortClicked = false; // Track if sort button has been clicked
 
-        document.addEventListener('DOMContentLoaded', () => {
-            let allImages = [];
-            let page = 0;
-            const pageSize = 20;
-            let loading = false;
-            let loadedImageNames = new Set(); // Set to track loaded image names
+    async function fetchImages() {
+        const response = await fetch('/images');
+        return response.json();
+    }
 
-            async function fetchImages() {
-                const response = await fetch('/images');
-                return response.json();
-            }
+    function createImageItem(image, yaml) {
+        const container = document.createElement('div');
+        container.className = 'image-item';
 
-            function createImageItem(image, yaml) {
-                const container = document.createElement('div');
-                container.className = 'image-item';
+        const img = document.createElement('img');
+        img.src = `/cache/${image}`;
+        img.alt = image;
+        img.onerror = () => {
+            container.style.display = 'none';
+        };
 
-                const img = document.createElement('img');
-                img.src = `/cache/${image}`;
-                img.alt = image;
-                img.onerror = () => {
-                    container.style.display = 'none';
-                };
+        const pre = document.createElement('pre');
+        pre.className = 'pre';
+        const pre_json = JSON.stringify(yaml, null, 2);
+        if (pre_json === '{}') {
+            console.log(`YAML data is null for image: ${image}`);
+            pre.textContent = "Prompt data unavailable";
 
-                const pre = document.createElement('pre');
-                pre.className = 'pre';
-                const pre_json = JSON.stringify(yaml, null, 2);
-                if (pre_json === '{}') {
-                    console.log(`YAML data is null for image: ${image}`);
-                    pre.textContent = "No YAML data available";
-
-                    // Fetch YAML data from /yaml route
-                    fetch(`/yaml/${image}`)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! Status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data) {
-                                // Update the pre element with fetched YAML data
-                                pre.textContent = JSON.stringify(data, null, 2);
-                            } else {
-                                console.log(`No YAML data found for image: ${image}`);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error fetching YAML data:', error);
-                        });
-                } else {
-                    pre.textContent = pre_json;
-                }
-
-                const createdAt = document.createElement('div');
-                createdAt.className = 'created-at';
-                const createdAtDate = getImageCreatedDate(image); // Get formatted date from image name
-                createdAt.textContent = `Generated: ${createdAtDate}`;
-
-                container.appendChild(img);
-                container.appendChild(createdAt);
-                container.appendChild(pre);
-
-                return container;
-            }
-
-            function getImageCreatedDate(imageName) {
-                // Assuming imageName format: image_YYYYMMDDHHMMSS.jpg
-                const year = imageName.substr(6, 4);
-                const month = imageName.substr(10, 2);
-                const day = imageName.substr(12, 2);
-                const hour24 = imageName.substr(14, 2);
-                const minute = imageName.substr(16, 2);
-                const second = imageName.substr(18, 2);
-
-                // Convert 24-hour format to 12-hour format
-                let hour12 = hour24 % 12;
-                hour12 = hour12 ? hour12 : 12; // If hour is 0, set it to 12
-
-                const period = hour24 >= 12 ? 'PM' : 'AM';
-
-                return `${day}/${month}/${year} ${hour12}:${minute}:${second} ${period}`;
-            }
-
-            async function loadImages() {
-                if (loading) return;
-                loading = true;
-                const spinner = document.getElementById('spinner');
-                spinner.style.display = 'block';
-
-                const data = await fetchImages();
-                allImages = data.image_files.reverse(); // Reverse the order of images
-                displayImages(allImages.slice(0, pageSize));
-
-                spinner.style.display = 'none';
-                observeLastImage();
-                loading = false;
-            }
-
-            function displayImages(images) {
-                const imageContainer = document.getElementById('image-container');
-                images.forEach(item => {
-                    if (!loadedImageNames.has(item.image)) { // Check if image is already loaded
-                        const imageItem = createImageItem(item.image, item.yaml);
-                        imageContainer.appendChild(imageItem);
-                        loadedImageNames.add(item.image); // Add image name to loaded set
+            // Fetch YAML data from /yaml route
+            fetch(`/yaml/${image}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
                     }
-                });
-            }
-
-            function observeLastImage() {
-                const imageContainer = document.getElementById('image-container');
-                const observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting && !loading) {
-                        loadMoreImages();
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        // Update the pre element with fetched YAML data
+                        pre.textContent = JSON.stringify(data, null, 2);
+                    } else {
+                        console.log(`No YAML data found for image: ${image}`);
                     }
+                })
+                .catch(error => {
+                    console.error('Error fetching YAML data:', error);
                 });
-                observer.observe(imageContainer.lastElementChild);
+        } else {
+            pre.textContent = pre_json;
+        }
+
+        const createdAt = document.createElement('div');
+        createdAt.className = 'created-at';
+        const createdAtDate = getImageCreatedDate(image); // Get formatted date from image name
+        createdAt.textContent = `Generated: ${createdAtDate}`;
+
+        container.appendChild(img);
+        container.appendChild(createdAt);
+        container.appendChild(pre);
+
+        return container;
+    }
+
+    function getImageCreatedDate(imageName) {
+        // Assuming imageName format: image_YYYYMMDDHHMMSS.jpg
+        const year = imageName.substr(6, 4);
+        const month = imageName.substr(10, 2);
+        const day = imageName.substr(12, 2);
+        const hour24 = imageName.substr(14, 2);
+        const minute = imageName.substr(16, 2);
+        const second = imageName.substr(18, 2);
+
+        // Convert 24-hour format to 12-hour format
+        let hour12 = hour24 % 12;
+        hour12 = hour12 ? hour12 : 12; // If hour is 0, set it to 12
+
+        const period = hour24 >= 12 ? 'PM' : 'AM';
+
+        return `${day}/${month}/${year} ${hour12}:${minute}:${second} ${period}`;
+    }
+
+    async function loadImages() {
+        if (loading) return;
+        loading = true;
+        const spinner = document.getElementById('spinner');
+        spinner.style.display = 'block';
+
+        const data = await fetchImages();
+        allImages = data.image_files.reverse(); // Reverse the order of images
+        displayImages(allImages.slice(0, pageSize));
+
+        spinner.style.display = 'none';
+        loading = false;
+    }
+
+    function displayImages(images) {
+        const imageContainer = document.getElementById('image-container');
+        images.forEach(item => {
+            if (!loadedImageNames.has(item.image)) { // Check if image is already loaded
+                const imageItem = createImageItem(item.image, item.yaml);
+                imageContainer.appendChild(imageItem);
+                loadedImageNames.add(item.image); // Add image name to loaded set
             }
-
-            async function loadMoreImages() {
-                if (loading) return;
-                loading = true;
-                const start = page * pageSize;
-                const end = start + pageSize;
-                const images = allImages.slice(start, end);
-                
-                if (images.length === 0) {
-                    // No more images to load, remove the load more button
-                    const loadMoreBtn = document.getElementById('load-more-btn');
-                    loadMoreBtn.style.display = 'none';
-                } else {
-                    displayImages(images);
-                    page++;
-                }
-                
-                loading = false;
-            }
-
-            const loadMoreBtn = document.getElementById('load-more-btn');
-            loadMoreBtn.addEventListener('click', loadMoreImages);
-
-            const sortBtn = document.getElementById('sort-btn');
-            sortBtn.addEventListener('click', () => {
-                allImages.reverse(); // Reverse the order of images array
-                displayImages(allImages.slice(0, pageSize));
-            });
-
-            const goToTopBtn = document.getElementById('go-to-top-btn');
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 300) {
-                    goToTopBtn.style.display = 'block';
-                } else {
-                    goToTopBtn.style.display = 'none';
-                }
-            });
-
-            goToTopBtn.addEventListener('click', () => {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            });
-
-            loadImages();
         });
+    }
 
+    function sortDisplayImages(images) {
+        const imageContainer = document.getElementById('image-container');
+        imageContainer.innerHTML = '';
+        images.forEach(item => {
+            if (!loadedImageNames.has(item.image)) { // Check if image is already loaded
+                const imageItem = createImageItem(item.image, item.yaml);
+                imageContainer.appendChild(imageItem);
+                loadedImageNames.add(item.image); // Add image name to loaded set
+            }
+        });
+    }
+
+    async function loadMoreImages() {
+        if (loading) return;
+        loading = true;
+        const start = page * pageSize;
+        const end = start + pageSize;
+        const images = allImages.slice(start, end);
+        
+        if (images.length === 0) {
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            loadMoreBtn.style.display = 'none';
+        } else {
+            displayImages(images);
+            page++;
+        }
+        
+        loading = false;
+    }
+
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    loadMoreBtn.addEventListener('click', loadMoreImages);
+
+    const sortBtn = document.getElementById('sort-btn');
+    sortBtn.addEventListener('click', () => {
+        console.log('Sort button clicked');
+        if (!sortClicked) {
+            allImages.reverse();
+            sortDisplayImages(allImages.slice(0, pageSize));
+            sortClicked = true;
+        } else {
+            location.reload(); // Reload the webpage if sort button clicked again
+        }
+    });
+
+    const goToTopBtn = document.getElementById('go-to-top-btn');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            goToTopBtn.style.display = 'block';
+        } else {
+            goToTopBtn.style.display = 'none';
+        }
+    });
+
+    goToTopBtn.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+
+    loadImages(); // Initial load of images
+});
     </script>
 </body>
 </html>
